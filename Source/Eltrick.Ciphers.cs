@@ -7,8 +7,6 @@ namespace Eltrick.Ciphers;
 // Cipher Machine - Generalised HI
 internal class HillCipher
 {
-    private static readonly NonCipherMachineHelpers NonCipherMachineHelpers = new();
-
     public int Size { get; }
     public int Modulus { get; }
 
@@ -28,15 +26,9 @@ internal class HillCipher
         } while (Operators.GreatestCommonDivisor(Determinant(), Modulus) != 1);
     }
 
-    public void SetEntry(int i, int j, int value)
-    {
-        _matrix[i, j] = value;
-    }
+    public void SetEntry(int i, int j, int value) => _matrix[i, j] = value;
 
-    public int GetEntry(int i, int j)
-    {
-        return _matrix[i, j];
-    }
+    public int GetEntry(int i, int j) => _matrix[i, j];
 
     public HillCipher SubMatrix(int a, int b)
     {
@@ -93,10 +85,7 @@ internal class HillCipher
         return matrix;
     }
 
-    public HillCipher Adjugate()
-    {
-        return Cofactor().Transpose();
-    }
+    public HillCipher Adjugate() => Cofactor().Transpose();
 
     public static int MultiplicativeInverse(int value, int modulus = int.MaxValue)
     {
@@ -106,10 +95,7 @@ internal class HillCipher
         return -1;
     }
 
-    public HillCipher InverseMatrix()
-    {
-        return Adjugate().ScalarMultiplication(MultiplicativeInverse(Determinant(), Modulus));
-    }
+    public HillCipher InverseMatrix() => Adjugate().ScalarMultiplication(MultiplicativeInverse(Determinant(), Modulus));
 
     public HillCipher ScalarMultiplication(int scalar)
     {
@@ -133,22 +119,14 @@ internal class HillCipher
         return result;
     }
 
-    public override string ToString()
-    {
-        return string.Join(", ", _matrix.Cast<int>().ToArray().Select(x => x.ToString()).ToArray());
-    }
+    public override string ToString() => string.Join(", ", _matrix.Cast<int>().ToArray().Select(x => x.ToString()).ToArray());
 
-    public int[] MatrixToArray()
-    {
-        return _matrix.Cast<int>().ToArray();
-    }
+    public int[] MatrixToArray() => _matrix.Cast<int>().ToArray();
 }
 
 // Cipher Machine - QR
 internal class QuadrantReflectionCipher
 {
-    private static readonly NonCipherMachineHelpers NonCipherMachineHelpers = new();
-
     public int QuadrantSize = 5;
     public int StartingQuadrant;
 
@@ -273,10 +251,7 @@ internal class QuadrantReflectionCipher
         return result;
     }
 
-    public string GetKeystrings()
-    {
-        return string.Join(";", _keystrings);
-    }
+    public string GetKeystrings() => string.Join(";", _keystrings);
 
     private static int[] Find(string[,] quadrant, string letter)
     {
@@ -291,8 +266,6 @@ internal class QuadrantReflectionCipher
 // Only a funny test thing. Might be used somewhere.
 internal class ContinuedFractionCipher
 {
-    private static readonly NonCipherMachineHelpers NonCipherMachineHelpers = new();
-
     public string Word;
 
     public ContinuedFractionCipher(string word)
@@ -333,7 +306,6 @@ internal class ContinuedFractionCipher
 
 internal class PositionalComponentTranspositionCipher
 {
-    private readonly NonCipherMachineHelpers _nonCipherMachineHelpers = new();
     public string Word, Keyword, Keystring;
 
     /// <summary>
@@ -353,7 +325,7 @@ internal class PositionalComponentTranspositionCipher
     {
         Word = word;
         Keyword = keyword;
-        Keystring = _nonCipherMachineHelpers.CreateKeystring(Keyword, _nonCipherMachineHelpers.random.Next(0, 2) == 1);
+        Keystring = NonCipherMachineHelpers.CreateKeystring(Keyword, NonCipherMachineHelpers.random.Next(0, 2) == 1);
     }
 
     public string Encrypt(string word)
@@ -363,13 +335,10 @@ internal class PositionalComponentTranspositionCipher
         return result;
     }
 
-    public string GetKeystring()
-    {
-        return Keystring;
-    }
+    public string GetKeystring() => Keystring;
 }
 
-static class Operators
+internal static class Operators
 {
     internal static int PositiveModulo(this int i, int j) => (i % j + j) % j;
     
@@ -388,21 +357,21 @@ static class Operators
 
 internal class NonCipherMachineHelpers
 {
-    internal readonly Random random = new();
+    internal static readonly Random random = new();
 
     /// <summary>
     /// Creates a keystring.
     /// </summary>
     /// <param name="keyword">The keyword to make the keystring out of.</param>
     /// <param name="front">Determines if the keyword is put at the front of the string or not.</param>
-    /// <returns></returns>
-    public string CreateKeystring(string keyword, bool front)
+    /// <returns>A Keystring</returns>
+    public static string CreateKeystring(string keyword, bool front)
     {
         string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         string noDuplicates = "";
         foreach (char x in keyword)
-            if (noDuplicates.IndexOf(x) == -1)
+            if (noDuplicates.Contains(x))
                 noDuplicates += x.ToString();
 
         alphabet = Regex.Replace(alphabet, "[" + noDuplicates + "]", "");
@@ -416,15 +385,15 @@ internal class NonCipherMachineHelpers
     /// <param name="number">The number to convert</param>
     /// <param name="baseFrom">The base to convert from</param>
     /// <param name="baseTo">The base to convert to</param>
-    /// <returns></returns>
-    public ulong[] BaseConverter(ulong number, ulong baseFrom, ulong baseTo)
+    /// <param name="alphabet">String to reference when converting bases</param>
+    /// <returns>An array of numbers representing the number in baseTo</returns>
+    public static ulong[] BaseConverter(string number, ulong baseFrom, ulong baseTo, string alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_")
     {
         ulong baseTen = 0;
         List<ulong> results = new List<ulong>();
 
-        string s = number.ToString();
-        for (int i = 0; i < s.Length; i++)
-            baseTen += ulong.Parse(s[i].ToString()) * (ulong)Math.Pow(baseFrom, s.Length - 1 - i);
+        for (int i = 0; i < number.Length; i++)
+            baseTen += (ulong)alphabet.IndexOf(number[i]) * (ulong)Math.Pow(baseFrom, number.Length - 1 - i);
         
         do
         {
@@ -437,8 +406,13 @@ internal class NonCipherMachineHelpers
         return results.ToArray();
     }
 
-    public string BaseConverterResults(ulong[] results, string alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_")
-    {
-        return string.Join("", Enumerable.Range(0, results.Length).Select(x => alphabet[(int)results[x]]));
-    }
+    /// <summary>
+    /// Converts the results from BaseConverter to a string.
+    /// </summary>
+    /// <param name="results">Results from BaseConverter</param>
+    /// <param name="alphabet">Alphabet used in BaseConverter</param>
+    /// <returns>A string representing the results</returns>
+    public static string BaseConverterResults(ulong[] results,
+        string alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_") => string.Join("",
+        Enumerable.Range(0, results.Length).Select(x => alphabet[(int)results[x]]));
 }
